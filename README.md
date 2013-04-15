@@ -1,4 +1,4 @@
-Batch_rename_date - Bulk renaming files using filecreation date.
+Batcher - Bulk renaming files using EXIF data.
 
 v1.08
  -Using EXIF data instead of date as date source.
