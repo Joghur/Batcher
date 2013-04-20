@@ -52,16 +52,19 @@ class Batch_Renamer(wx.Frame):
 	
 	#Menu 
         file = wx.Menu()
-        file.Append(ID_RENAME, '&Rename\tCtrl+R', 'Rename')
-        file.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+E', 'Convert -> JPG')
-        file.Append(ID_RESIZE, '&Resize\tCtrl+T', 'Resize')
         file.Append(ID_EXIT, '&Quit\tCtrl+Q', 'Quit')
+
+        change = wx.Menu()
+        change.Append(ID_RENAME, '&Rename\tCtrl+R', 'Rename')
+        change.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+E', 'Convert -> JPG')
+        change.Append(ID_RESIZE, '&Resize\tCtrl+T', 'Resize')
 
         help = wx.Menu()
         help.Append(ID_ABOUT, '&About', 'About')
 
         menubar = wx.MenuBar()
         menubar.Append(file, '&File')
+        menubar.Append(change, '&Change')
         menubar.Append(help, '&Help')
         self.SetMenuBar(menubar)
 
