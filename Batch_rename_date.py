@@ -40,6 +40,8 @@ ID_BUTTON = 4
 ID_RENAME = 5
 ID_RESIZE = 6
 ID_CONVERTRAWJPG = 7
+ID_INSERT = 8
+ID_CHANGE = 9
 RESIZER = 70
 
 
@@ -56,6 +58,8 @@ class Batch_Renamer(wx.Frame):
 
         change = wx.Menu()
         change.Append(ID_RENAME, '&Rename\tCtrl+R', 'Rename')
+        change.Append(ID_INSERT, '&Insert name\tCtrl+I', 'Insert')
+        change.Append(ID_CHANGE, '&Change EXIF date\tCtrl+D', 'Change EXIF date')
         change.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+E', 'Convert -> JPG')
         change.Append(ID_RESIZE, '&Resize\tCtrl+T', 'Resize')
 
@@ -70,16 +74,21 @@ class Batch_Renamer(wx.Frame):
 
 	
 	#Toolbar       
-	toolbar = wx.ToolBar(self, -1)
+        toolbar = wx.ToolBar(self, -1)
         self.tc = wx.TextCtrl(toolbar, -1,size=(100, -1))
-	self.labeltc = wx.StaticText(toolbar, wx.ID_ANY, label="Generic filename", style=wx.ALIGN_CENTER)
+        self.labeltc = wx.StaticText(toolbar, wx.ID_ANY, label="Generic filename", style=wx.ALIGN_CENTER)
+        self.tn = wx.TextCtrl(toolbar, -1,size=(100, -1))
+        self.labeltn = wx.StaticText(toolbar, wx.ID_ANY, label="Photographer", style=wx.ALIGN_CENTER)
         #btn = wx.Button(toolbar, ID_BUTTON, 'Ok', size=(40, 28))
         self.tr = wx.TextCtrl(toolbar, -1, size=(100, -1))
-	self.labeltr = wx.StaticText(toolbar, wx.ID_ANY, label="Size in %", style=wx.ALIGN_CENTER)	
-	toolbar.AddControl(self.labeltc)
+        self.labeltr = wx.StaticText(toolbar, wx.ID_ANY, label="Size in %", style=wx.ALIGN_CENTER)	
+        toolbar.AddControl(self.labeltc)
         toolbar.AddControl(self.tc)
         toolbar.AddSeparator()
-	toolbar.AddControl(self.labeltr)
+        toolbar.AddControl(self.labeltn)
+        toolbar.AddControl(self.tn)
+        toolbar.AddSeparator()
+        toolbar.AddControl(self.labeltr)
         toolbar.AddControl(self.tr)
         #toolbar.AddControl(btn)
         toolbar.Realize()
@@ -88,6 +97,8 @@ class Batch_Renamer(wx.Frame):
 	#self.Bind(wx.EVT_BUTTON, self.OnLaunchCommandOk, id=ID_BUTTON)
         self.Bind(wx.EVT_MENU, self.OnAbout, id=ID_ABOUT)
         self.Bind(wx.EVT_MENU, self.OnRename, id=ID_RENAME)
+        self.Bind(wx.EVT_MENU, self.OnInsert, id=ID_INSERT)
+        self.Bind(wx.EVT_MENU, self.OnChange, id=ID_CHANGE)
         self.Bind(wx.EVT_MENU, self.OnConvertRAWJPG, id=ID_CONVERTRAWJPG)
         self.Bind(wx.EVT_MENU, self.OnResize, id=ID_RESIZE)
         self.Bind(wx.EVT_MENU, self.OnExit, id=ID_EXIT)
@@ -287,6 +298,16 @@ class Batch_Renamer(wx.Frame):
 			print 'No directory.'
 	else: #dlg.ShowModal() == wx.ID_YES:
 		dlg.Destroy()
+
+
+    def OnInsert(self, event):
+        pass
+
+
+
+    def OnChange(self, event):
+        pass
+
 
 
     def OnConvertRAWJPG(self, event):
