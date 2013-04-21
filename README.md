@@ -1,5 +1,8 @@
 Batcher - Bulk renaming files using EXIF data.
 
+v1.09
+ -Updated Resizing. Now using quality and resize values
+
 v1.08
  -Using EXIF data instead of date as date source.
 

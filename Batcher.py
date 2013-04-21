@@ -22,15 +22,36 @@ http://www.gnu.org/copyleft/gpl.html
 
 
 try:
-    import wx
+    import wx #from wxPython.wx import *
 except ImportError:
     raise ImportError,"The wxPython module is required to run this program"
 
-from wxPython.wx import *
-import os, re, sets, shutil, datetime, dateutil, subprocess
+try:
+    from wxPython.wx import *
+except ImportError:
+    raise ImportError,"The wxPython module is required to run this program"
+    dlg = wx.MessageDialog(self, 'The wxPython module is required to run this program\t', 'Note', wx.OK | wx.ICON_INFORMATION)
+    dlg.ShowModal()
+
+try:
+	import subprocess
+except ImportError:
+    raise ImportError,"The subprocess module is required to run this program"
+    dlg = wx.MessageDialog(self, 'The subprocess module is required to run this program\t', 'Note', wx.OK | wx.ICON_INFORMATION)
+    dlg.ShowModal()
+
+try:
+	from PIL import Image
+	from PIL.ExifTags import TAGS
+except ImportError:
+    raise ImportError,"The PIL (Python Image Library) module is required to run this program"
+    dlg = wx.MessageDialog(self, 'The PIL (Python Image Library) module is required to run this program\t', 'Note', wx.OK | wx.ICON_INFORMATION)
+    dlg.ShowModal()
+
+
+import os, re, sets, shutil, datetime, subprocess #dateutil, 
 from sets import Set
-from PIL import Image
-from PIL.ExifTags import TAGS
+
 
 
 ID_TIMER = 1
@@ -84,7 +105,9 @@ class Batcher(wx.Frame):
         self.labeltn = wx.StaticText(toolbar, wx.ID_ANY, label="Photographer", style=wx.ALIGN_CENTER)
         #btn = wx.Button(toolbar, ID_BUTTON, 'Ok', size=(40, 28))
         self.tr = wx.TextCtrl(toolbar, -1, size=(100, -1))
-        self.labeltr = wx.StaticText(toolbar, wx.ID_ANY, label="Size in %", style=wx.ALIGN_CENTER)	
+        self.labeltr = wx.StaticText(toolbar, wx.ID_ANY, label="Size in %", style=wx.ALIGN_CENTER)
+        self.ts = wx.TextCtrl(toolbar, -1, size=(100, -1))
+        self.labelts = wx.StaticText(toolbar, wx.ID_ANY, label="Quality", style=wx.ALIGN_CENTER)
         toolbar.AddControl(self.labeltc)
         toolbar.AddControl(self.tc)
         toolbar.AddSeparator()
@@ -93,6 +116,9 @@ class Batcher(wx.Frame):
         toolbar.AddSeparator()
         toolbar.AddControl(self.labeltr)
         toolbar.AddControl(self.tr)
+        toolbar.AddSeparator()
+        toolbar.AddControl(self.labelts)
+        toolbar.AddControl(self.ts)
         #toolbar.AddControl(btn)
         toolbar.Realize()
         self.SetToolBar(toolbar)
@@ -137,7 +163,7 @@ class Batcher(wx.Frame):
 
 
     def OnAbout(self, event):
-        dlg = wx.MessageDialog(self, 'Batcher\t\n' 'v1.09\t\n' 'Martin Bøgh Sander-Thomsen\t', 'About', wx.OK | wx.ICON_INFORMATION)
+        dlg = wx.MessageDialog(self, 'Batcher\t\n' 'v1.09\t\n' 'Martin B. Sander-Thomsen\t', 'About', wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -183,7 +209,6 @@ class Batcher(wx.Frame):
                 print 'Work Folder:', os.getcwd()
                 dirList = os.listdir("./")
                 dirList.sort()
-                #for d in dirList:
                 print 'getcwd:', dirList
                 def modification_date(filename):
                     t = os.path.getmtime(filename)
@@ -202,7 +227,6 @@ class Batcher(wx.Frame):
                     return ret['DateTimeOriginal']
            
                 for d in dirList:
-
                     d2 = get_exif(d)
                     #d2 = modification_date(d)
                     if os.path.isdir(d) == False:
@@ -289,34 +313,34 @@ class Batcher(wx.Frame):
             dlg.Destroy()
 	
     def OnResize(self, event):
-	
-        dlg = wx.MessageDialog(self, 'Have you made a backup? There\'s almost no error correction in Batch Renamer.\nRemember to type in the size in % you want photos to be resized to.', 
-            'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        dlg = wx.MessageDialog(self, 'Have you made a backup? There\'s almost no error correction in Batcher.\nRemember to type in the size in % you want photos to be resized to.', 'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() == wx.ID_YES:
+            dialog = wxDirDialog ( None, message = 'Pick a directory for resizing photos.' )
+            if dialog.ShowModal() == wxID_OK:
+                arbejds_dir=dialog.GetPath()
+                arbejds_filsize=self.tr.GetValue()
+                arbejds_quality=self.ts.GetValue()
+                os.chdir(arbejds_dir)
+                dirList2 = os.listdir("./")
+                dirList2.sort()
+                for d in dirList2:
+                    origname = os.path.splitext(d)[0]
+                    suffix= os.path.splitext(d)[1]
+                    print "Original filename:", origname
+                    print "Suffix:", suffix
+                    arg = " " + "-resize " + arbejds_filsize + " " + "-quality " + arbejds_quality + " "
+                    print 'Work Folder:', os.getcwd()
+                    # Command line for linux
+                    command = "convert " + d + arg + d
+                    print command
+                    child = subprocess.Popen(command, shell=True)
+                    child.communicate()
 
-		dialog = wxDirDialog ( None, message = 'Pick a directory for resizing photos.' )
-		if dialog.ShowModal() == wxID_OK:
+            else: #dialog.ShowModal() == wxID_OK:
+                print 'No directory.'
 
-			arbejds_dir=dialog.GetPath()
-			arbejds_filsize=self.tr.GetValue()
-			os.chdir(arbejds_dir)
-
-			arg = " " + "-resize " + arbejds_filsize + " "
-			print 'Work Folder:', os.getcwd()
-			# Command line for linux
-			command = "mogrify " + arg + "*"
-			print command
-			# Command line for windows, alter path if needed
-			# command = "c:\\programs\\ImageMagick\\mogrify.exe " + arg + "*"
-
-			# Invoke mogrify.
-			child = subprocess.Popen(command, shell=True)
-			child.communicate() 
-		else: #dialog.ShowModal() == wxID_OK:
-
-			print 'No directory.'
-	else: #dlg.ShowModal() == wx.ID_YES:
-		dlg.Destroy()
+        else: #dlg.ShowModal() == wx.ID_YES:
+            dlg.Destroy()
 
 
     def OnInsert(self, event):
@@ -359,11 +383,8 @@ class Batcher(wx.Frame):
                         num_items = self.lc.GetItemCount()
                         self.lc.InsertStringItem(num_items, d)
                         self.lc.SetStringItem(num_items, 1, d3 + ".jpg")
-
-                        # Invoke mogrify.
                         child = subprocess.Popen(command, shell=True)
-                        child.communicate()
-
+                        child.communicate()						
             else: #dialog.ShowModal() == wxID_OK:
                 print 'No directory.'
 
