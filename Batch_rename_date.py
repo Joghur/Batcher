@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Program der masse omdøber filnavne via deres dato
-#Version 1.08
+#Version 1.09
 
 License:
 
@@ -42,10 +42,12 @@ ID_RESIZE = 6
 ID_CONVERTRAWJPG = 7
 ID_INSERT = 8
 ID_CHANGE = 9
+ID_RENAMEDATE = 10
+
 RESIZER = 70
 
 
-class Batch_Renamer(wx.Frame):
+class Batcher(wx.Frame):
     def __init__(self, parent, id, title):
         wx.Frame.__init__(self, parent, id, title)
 
@@ -57,9 +59,10 @@ class Batch_Renamer(wx.Frame):
         file.Append(ID_EXIT, '&Quit\tCtrl+Q', 'Quit')
 
         change = wx.Menu()
-        change.Append(ID_RENAME, '&Rename\tCtrl+R', 'Rename')
+        change.Append(ID_RENAME, '&Rename using EXIF data\tCtrl+R', 'Rename EXIF')
+        change.Append(ID_RENAMEDATE, '&Rename using filedate\tCtrl+D', 'Rename date')
         change.Append(ID_INSERT, '&Insert name\tCtrl+I', 'Insert')
-        change.Append(ID_CHANGE, '&Change EXIF date\tCtrl+D', 'Change EXIF date')
+        change.Append(ID_CHANGE, '&Change EXIF date\tCtrl+T', 'Change EXIF date')
         change.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+E', 'Convert -> JPG')
         change.Append(ID_RESIZE, '&Resize\tCtrl+T', 'Resize')
 
@@ -97,6 +100,7 @@ class Batch_Renamer(wx.Frame):
 	#self.Bind(wx.EVT_BUTTON, self.OnLaunchCommandOk, id=ID_BUTTON)
         self.Bind(wx.EVT_MENU, self.OnAbout, id=ID_ABOUT)
         self.Bind(wx.EVT_MENU, self.OnRename, id=ID_RENAME)
+        self.Bind(wx.EVT_MENU, self.OnRenameDATE, id=ID_RENAMEDATE)
         self.Bind(wx.EVT_MENU, self.OnInsert, id=ID_INSERT)
         self.Bind(wx.EVT_MENU, self.OnChange, id=ID_CHANGE)
         self.Bind(wx.EVT_MENU, self.OnConvertRAWJPG, id=ID_CONVERTRAWJPG)
@@ -121,25 +125,35 @@ class Batch_Renamer(wx.Frame):
 
 	#Statusbar
         self.statusbar = self.CreateStatusBar()
-        self.statusbar.SetStatusText('Welcome to Batcher (Batch Renamer)')
+        self.statusbar.SetStatusText('Welcome to Batcher')
         self.Centre()
         self.Show(True)
 
     def OnExit(self, event):
-        dlg = wx.MessageDialog(self, 'Are you sure to quit Batch Renamer?', 
+        dlg = wx.MessageDialog(self, 'Are you sure to quit Batcher?', 
 		'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() == wx.ID_YES:
 		    self.Close(True)
 
 
     def OnAbout(self, event):
-
-        dlg = wx.MessageDialog(self, 'Batcher (Batch Renamer)\t\n' 'v1.08\t\n' 'Martin Bøgh Sander-Thomsen\t', 'About', wx.OK | wx.ICON_INFORMATION)
+        dlg = wx.MessageDialog(self, 'Batcher\t\n' 'v1.09\t\n' 'Martin Bøgh Sander-Thomsen\t', 'About', wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
+
+
+    def OnRenameEXIF(self, event):
+        dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+
+
+    def OnRenameDATE(self, event):
+        dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+
 	
     def OnRename(self, event):
-        dlg = wx.MessageDialog(self, "Have you made a backup? There\'s almost no error correction in Batch Renamer.\nRemember to type in the generic filename you want added to the files.",'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        dlg = wx.MessageDialog(self, "Have you made a backup? There\'s almost no error correction in Batcher.\nRemember to type in the generic filename you want added to the files.",'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() == wx.ID_YES:
             dialog = wxDirDialog ( None, message = 'Pick a directory for renaming files.' )
             if dialog.ShowModal() == wxID_OK:
@@ -158,6 +172,11 @@ class Batch_Renamer(wx.Frame):
 
                 arbejds_dir=dialog.GetPath() #raw_input('Indtast foldernavn--> ')
                 arbejds_filnavn=self.tc.GetValue() #raw_input('Indtast ønsket filnavn--> ')
+                fotograf=self.tn.GetValue()
+                if fotograf=="":
+                    pass
+                else:
+                    fotograf= fotograf + "_"
 
                 os.chdir(arbejds_dir)
 
@@ -187,8 +206,8 @@ class Batch_Renamer(wx.Frame):
                     d2 = get_exif(d)
                     #d2 = modification_date(d)
                     if os.path.isdir(d) == False:
+                        exif=2                        
                         temp_file=d
-                        exif=2
                         if exif==1: #bruger fil dato
                             th = str(d2.hour)
                             if len(th)==1:
@@ -244,10 +263,10 @@ class Batch_Renamer(wx.Frame):
                             if arbejds_filnavn=="":
                                 extra=''
 
-
                         nytnavn=extra + ty + '-' + tmo + '-' + td + '_' + th + tm + ts
                         print nytnavn
-                        filnavn = arbejds_filnavn + nytnavn + '_' + d
+                        print "Photographer:", fotograf
+                        filnavn = arbejds_filnavn + nytnavn + '_' + fotograf + d
                         print filnavn
 
                         #wx.StaticText(self.panel, -1, filnavn, (1, taeller), style=wx.ALIGN_LEFT)
@@ -301,12 +320,14 @@ class Batch_Renamer(wx.Frame):
 
 
     def OnInsert(self, event):
-        pass
+        dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
 
 
 
     def OnChange(self, event):
-        pass
+        dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
 
 
 
@@ -375,7 +396,7 @@ class Batch_Renamer(wx.Frame):
             self.blick = 0
 
 app = wx.App()
-Batch_Renamer(None, -1, 'Batcher (Batch Renamer)')
+Batcher(None, -1, 'Batcher')
 app.MainLoop()
 
 
