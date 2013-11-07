@@ -1,10 +1,10 @@
 Batcher - Bulk renaming files using EXIF data.
 
 v1.11.03
- -Timelapse:
-    -Removing dark photos
-    -Renaming photos with consecutive numbers
-    -Making timelapse video
+ -New Timelapse menu
+ -Removing dark photos
+ -Renaming photos with consecutive numbers
+ -Making timelapse video
 
 v1.09
  -Updated Resizing. Now using quality and resize values
