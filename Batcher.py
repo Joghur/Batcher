@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Program der masse omdøber filnavne via deres dato
-#Version 1.09
+#Version 1.11.3
 
 License:
 
@@ -34,22 +34,23 @@ except ImportError:
     dlg.ShowModal()
 
 try:
-	import subprocess
+    import subprocess
 except ImportError:
     raise ImportError,"The subprocess module is required to run this program"
     dlg = wx.MessageDialog(self, 'The subprocess module is required to run this program\t', 'Note', wx.OK | wx.ICON_INFORMATION)
     dlg.ShowModal()
 
 try:
-	from PIL import Image
-	from PIL.ExifTags import TAGS
+    from PIL import Image
+    from PIL import ImageStat
+    from PIL.ExifTags import TAGS
 except ImportError:
     raise ImportError,"The PIL (Python Image Library) module is required to run this program"
     dlg = wx.MessageDialog(self, 'The PIL (Python Image Library) module is required to run this program\t', 'Note', wx.OK | wx.ICON_INFORMATION)
     dlg.ShowModal()
 
 
-import os, re, sets, shutil, datetime, subprocess #dateutil, 
+import os, re, sets, shutil, datetime, subprocess, glob #dateutil, 
 from sets import Set
 
 
@@ -64,6 +65,10 @@ ID_CONVERTRAWJPG = 7
 ID_INSERT = 8
 ID_CHANGE = 9
 ID_RENAMEDATE = 10
+ID_CONSNUMBER = 11
+ID_TIMELAPSE = 12
+ID_ALLINONE = 13
+ID_REMOVEDARK = 14
 
 RESIZER = 70
 
@@ -74,18 +79,25 @@ class Batcher(wx.Frame):
 
         self.timer = wx.Timer(self, ID_TIMER)
         self.blick = 0
-	
-	#Menu 
+    
+    #Menu 
         file = wx.Menu()
         file.Append(ID_EXIT, '&Quit\tCtrl+Q', 'Quit')
 
         change = wx.Menu()
         change.Append(ID_RENAME, '&Rename using EXIF data\tCtrl+R', 'Rename EXIF')
         change.Append(ID_RENAMEDATE, '&Rename using filedate\tCtrl+D', 'Rename date')
+        change.Append(ID_CONSNUMBER, '&Rename with consecutive numbers\tCtrl+N', 'Rename consecutive numbers')       
         change.Append(ID_INSERT, '&Insert name\tCtrl+I', 'Insert')
-        change.Append(ID_CHANGE, '&Change EXIF date\tCtrl+T', 'Change EXIF date')
-        change.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+E', 'Convert -> JPG')
-        change.Append(ID_RESIZE, '&Resize\tCtrl+T', 'Resize')
+        change.Append(ID_CHANGE, '&Change EXIF date\tCtrl+E', 'Change EXIF date')
+        change.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+C', 'Convert -> JPG')
+        change.Append(ID_RESIZE, '&Resize\tCtrl+S', 'Resize')
+
+        timelapse = wx.Menu()
+        timelapse.Append(ID_REMOVEDARK, '&Remove dark photos', 'Remove dark photos')        
+        timelapse.Append(ID_CONSNUMBER, '&Rename with consecutive numbers\tCtrl+N', 'Rename consecutive numbers')
+        timelapse.Append(ID_TIMELAPSE, '&Timelapse\tCtrl+T', 'Timelapse')
+        timelapse.Append(ID_ALLINONE, '&All in one', 'Renaming and Timelapse')        
 
         help = wx.Menu()
         help.Append(ID_ABOUT, '&About', 'About')
@@ -93,14 +105,15 @@ class Batcher(wx.Frame):
         menubar = wx.MenuBar()
         menubar.Append(file, '&File')
         menubar.Append(change, '&Change')
+        menubar.Append(timelapse, '&Timelapse')        
         menubar.Append(help, '&Help')
         self.SetMenuBar(menubar)
 
-	
-	#Toolbar       
+    
+    #Toolbar       
         toolbar = wx.ToolBar(self, -1)
         self.tc = wx.TextCtrl(toolbar, -1,size=(100, -1))
-        self.labeltc = wx.StaticText(toolbar, wx.ID_ANY, label="Generic filename", style=wx.ALIGN_CENTER)
+        self.labeltc = wx.StaticText(toolbar, wx.ID_ANY, label="Filename", style=wx.ALIGN_CENTER)
         self.tn = wx.TextCtrl(toolbar, -1,size=(100, -1))
         self.labeltn = wx.StaticText(toolbar, wx.ID_ANY, label="Photographer", style=wx.ALIGN_CENTER)
         #btn = wx.Button(toolbar, ID_BUTTON, 'Ok', size=(40, 28))
@@ -123,15 +136,19 @@ class Batcher(wx.Frame):
         toolbar.Realize()
         self.SetToolBar(toolbar)
        
-	#self.Bind(wx.EVT_BUTTON, self.OnLaunchCommandOk, id=ID_BUTTON)
+    #self.Bind(wx.EVT_BUTTON, self.OnLaunchCommandOk, id=ID_BUTTON)
         self.Bind(wx.EVT_MENU, self.OnAbout, id=ID_ABOUT)
         self.Bind(wx.EVT_MENU, self.OnRename, id=ID_RENAME)
         self.Bind(wx.EVT_MENU, self.OnRenameDATE, id=ID_RENAMEDATE)
+        self.Bind(wx.EVT_MENU, self.OnRemoveDark, id=ID_REMOVEDARK)
+        self.Bind(wx.EVT_MENU, self.OnConsNUMBER, id=ID_CONSNUMBER)
+        self.Bind(wx.EVT_MENU, self.OnTimelapse, id=ID_TIMELAPSE)
+        self.Bind(wx.EVT_MENU, self.OnAllInOne, id=ID_ALLINONE)                          
         self.Bind(wx.EVT_MENU, self.OnInsert, id=ID_INSERT)
         self.Bind(wx.EVT_MENU, self.OnChange, id=ID_CHANGE)
         self.Bind(wx.EVT_MENU, self.OnConvertRAWJPG, id=ID_CONVERTRAWJPG)
         self.Bind(wx.EVT_MENU, self.OnResize, id=ID_RESIZE)
-        self.Bind(wx.EVT_MENU, self.OnExit, id=ID_EXIT)
+        self.Bind(wx.EVT_MENU, self.OnExit, id=ID_EXIT)   
         self.Bind(wx.EVT_TIMER, self.OnTimer, id=ID_TIMER)
 
         self.panel = wx.Panel(self, -1, (0, 0), (1000 , 500))
@@ -139,9 +156,9 @@ class Batcher(wx.Frame):
         self.sizer=wx.BoxSizer(wx.VERTICAL)
         #self.sizer.Add(self.panel, 1, wx.EXPAND)
 
-	
-	#Listcontrol
-	self.lc = wx.ListCtrl(self, -1, style=wx.LC_REPORT)
+    
+    #Listcontrol
+        self.lc = wx.ListCtrl(self, -1, style=wx.LC_REPORT)
         self.lc.InsertColumn(0, 'Before')
         self.lc.InsertColumn(1, 'After')
         self.lc.SetColumnWidth(0, 300)
@@ -149,21 +166,20 @@ class Batcher(wx.Frame):
         self.sizer.Add(self.lc, 1, wx.EXPAND | wx.ALL, 3)
         self.SetSizer(self.sizer)
 
-	#Statusbar
+    #Statusbar
         self.statusbar = self.CreateStatusBar()
         self.statusbar.SetStatusText('Welcome to Batcher')
         self.Centre()
         self.Show(True)
 
     def OnExit(self, event):
-        dlg = wx.MessageDialog(self, 'Are you sure to quit Batcher?', 
-		'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        dlg = wx.MessageDialog(self, 'Are you sure to quit Batcher?', 'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() == wx.ID_YES:
-		    self.Close(True)
+            self.Close(True)
 
 
     def OnAbout(self, event):
-        dlg = wx.MessageDialog(self, 'Batcher\t\n' 'v1.09\t\n' 'Martin B. Sander-Thomsen\t', 'About', wx.OK | wx.ICON_INFORMATION)
+        dlg = wx.MessageDialog(self, 'Batcher\t\n' 'v1.11.3\t\n' 'Martin B. Sander-Thomsen\t', 'About', wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -177,7 +193,7 @@ class Batcher(wx.Frame):
         dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
 
-	
+    
     def OnRename(self, event):
         dlg = wx.MessageDialog(self, "Have you made a backup? There\'s almost no error correction in Batcher.\nRemember to type in the generic filename you want added to the files.",'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() == wx.ID_YES:
@@ -311,7 +327,7 @@ class Batcher(wx.Frame):
 
         else: #dlg.ShowModal() == wx.ID_YES:
             dlg.Destroy()
-	
+
     def OnResize(self, event):
         dlg = wx.MessageDialog(self, 'Have you made a backup? There\'s almost no error correction in Batcher.\nRemember to type in the size in % you want photos to be resized to.', 'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() == wx.ID_YES:
@@ -343,6 +359,267 @@ class Batcher(wx.Frame):
             dlg.Destroy()
 
 
+    def OnRemoveDark(self, event):
+        dlg = wx.MessageDialog(self, 'Have you made a backup? There\'s almost no error correction in Batcher.', 'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        if dlg.ShowModal() == wx.ID_YES:
+            dialog = wxDirDialog ( None, message = 'Pick a directory containing photos. Dark photos will be removed' )
+            if dialog.ShowModal() == wxID_OK:
+                arbejds_dir=dialog.GetPath()
+                os.chdir(arbejds_dir)
+                dirList2 = os.listdir("./")
+                dirList2.sort()
+                print 'Work Folder:', os.getcwd()
+                for d in dirList2:
+                    origname = os.path.splitext(d)[0]
+                    suffix= os.path.splitext(d)[1]
+                    print "Original filename:", origname
+                    print "Suffix:", suffix
+                    im = Image.open(d).convert('L')
+                    stat = ImageStat.Stat(im)
+                    print "Brightness value (<60 is a dark photo)", stat.rms[0]
+                    if stat.rms[0] < 60:
+                        os.remove(d)
+                    print d, " is too dark. It is removed"
+
+            else: #dialog.ShowModal() == wxID_OK:
+                print 'No directory.'
+
+        else: #dlg.ShowModal() == wx.ID_YES:
+            dlg.Destroy()
+
+
+    def OnConsNUMBER(self, event):
+        dlg = wx.MessageDialog(self, "Have you made a backup? There\'s almost no error correction in Batcher.\nRemember to type in the generic filename you want added to the files.",'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        if dlg.ShowModal() == wx.ID_YES:
+            dialog = wxDirDialog ( None, message = 'Pick a directory for renaming files.' )
+            if dialog.ShowModal() == wxID_OK:
+                print 'Directory:', dialog.GetPath()
+                nylig_lavet_folder=False
+                sidste_fil=""
+                flyt_fil=False
+                folder_lavet=False
+                #dirList = os.listdir("./")
+                #dirList.sort()
+                #dirList = str(dirList)
+                #u = unicode( dirList, "utf-8" )
+                taeller = 1
+
+                #print u, taeller
+
+                arbejds_dir=dialog.GetPath() #raw_input('Indtast foldernavn--> ')
+                arbejds_filnavn=self.tc.GetValue() #raw_input('Indtast ønsket filnavn--> ')
+
+                os.chdir(arbejds_dir)
+
+                print 'Work Folder:', os.getcwd()
+                dirList = os.listdir("./")
+                dirList.sort()
+                print 'getcwd:', dirList
+                dirlistlen = len(dirList)
+                print 'Number of items in work folder:', dirlistlen
+                if dirlistlen > 9:
+                    if dirlistlen > 99:
+                        if dirlistlen > 999:
+                            if dirlistlen > 9999:
+                                if dirlistlen > 99999:
+                                    if dirlistlen > 999999:
+                                        padding="{0:07d}"
+                                    else:
+                                        padding="{0:06d}"
+                                else:
+                                    padding="{0:05d}"
+                            else:
+                                padding="{0:04d}"
+                        else:
+                            padding="{0:03d}"
+                    else:
+                        padding="{0:02d}"
+                else:
+                    padding="{0:01d}"
+                    
+
+                for d in dirList:
+                    if os.path.isdir(d) == False:
+                        extension = os.path.splitext(d)[1]
+                        temp_file=d
+
+                        filnavn = arbejds_filnavn + '_' + padding.format(taeller) + extension
+                        print filnavn
+
+                        #wx.StaticText(self.panel, -1, filnavn, (1, taeller), style=wx.ALIGN_LEFT)
+                        num_items = self.lc.GetItemCount()
+                        self.lc.InsertStringItem(num_items, d)
+                        self.lc.SetStringItem(num_items, 1, filnavn)				
+
+                        #wx.ListCtrl(self, -1, style=wx.LC_REPORT)
+                        #taeller += 1
+                        print "Counter: ", taeller
+
+                        os.rename(d, filnavn)
+                        taeller += 1
+                        
+
+            else: #dialog.ShowModal() == wxID_OK:
+                print 'No directory.'
+                dialog.Destroy()
+
+        else: #dlg.ShowModal() == wx.ID_YES:
+            dlg.Destroy()
+
+
+    def OnTimelapse(self, event):
+        dlg = wx.MessageDialog(self, 'Have you made a backup? There\'s almost no error correction in Batcher.', 'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        if dlg.ShowModal() == wx.ID_YES:
+            dialog = wxDirDialog ( None, message = 'Pick a directory containing timelapse photos. Photos need to be in named in consecutive order' )
+            if dialog.ShowModal() == wxID_OK:
+                num_items = self.lc.GetItemCount()
+                self.lc.InsertStringItem(num_items, "Working.")
+                print 'Working.'
+                timelapse_name=self.tc.GetValue()             
+                arbejds_dir=dialog.GetPath()
+                files = glob.glob(arbejds_dir + '/*.*')
+                origname = os.path.basename(files[0])
+                print "Origname:", origname
+                #finding a mount of digits in filename
+                match = re.search('(\d+)\.\w+$', origname)
+                print 'Padding:', match.group(1)
+                match_beforedigits = re.split(match.group(1), origname)
+                print 'Name before padding:', match_beforedigits[0]
+
+                dig = len(match.group(1))
+                print 'How many digits in name:' ,dig
+                
+                suffix= os.path.splitext(files[0])[1]
+                print "Suffix:", suffix
+                #os.chdir(arbejds_dir)
+                print 'Work Folder:', os.getcwd()
+                print 'Photo Folder:', arbejds_dir
+                # Command line for linux. Windows need to have ffmpeg binary in same folder as Batcher or in Path
+                command = "ffmpeg -f image2 -i " + arbejds_dir + "/" + match_beforedigits[0] + "%" + str(dig) + "d" + suffix + " -r 30 " + timelapse_name + ".mp4"
+                print command
+                args = command.split()
+                child = subprocess.Popen(args, shell=True)
+                child.communicate()
+                num_items = self.lc.GetItemCount()
+                self.lc.InsertStringItem(num_items, "Done. Find the timelapse video here: ")
+                self.lc.SetStringItem(num_items, 1, os.getcwd())
+                print 'Done.'
+
+            else: #dialog.ShowModal() == wxID_OK:
+                print 'No directory.'
+
+        else: #dlg.ShowModal() == wx.ID_YES:
+            dlg.Destroy()
+
+    def OnAllInOne(self, event):
+        homefolder=os.getcwd()
+        dlg = wx.MessageDialog(self, "Have you made a backup? There\'s almost no error correction in Batcher.\nRemember to type in the filename you want added to the files.",'Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        if dlg.ShowModal() == wx.ID_YES:
+            dialog = wxDirDialog ( None, message = 'Pick a directory.' )
+            if dialog.ShowModal() == wxID_OK:
+                print 'Directory:', dialog.GetPath()
+                nylig_lavet_folder=False
+                sidste_fil=""
+                flyt_fil=False
+                folder_lavet=False
+
+                taeller = 1
+
+
+                arbejds_dir=dialog.GetPath()
+                arbejds_filnavn=self.tc.GetValue()
+
+                os.chdir(arbejds_dir)
+
+                print 'Work Folder:', os.getcwd()
+                dirList = os.listdir("./")
+                dirList.sort()
+                print 'getcwd:', dirList
+                dirlistlen = len(dirList)
+                print 'Number of items in work folder:', dirlistlen
+                if dirlistlen > 9:
+                    if dirlistlen > 99:
+                        if dirlistlen > 999:
+                            if dirlistlen > 9999:
+                                if dirlistlen > 99999:
+                                    if dirlistlen > 999999:
+                                        padding="{0:07d}"
+                                    else:
+                                        padding="{0:06d}"
+                                else:
+                                    padding="{0:05d}"
+                            else:
+                                padding="{0:04d}"
+                        else:
+                            padding="{0:03d}"
+                    else:
+                        padding="{0:02d}"
+                else:
+                    padding="{0:01d}"
+                    
+
+                for d in dirList:
+                    if os.path.isdir(d) == False:
+                        extension = os.path.splitext(d)[1]
+                        temp_file=d
+
+                        filnavn = arbejds_filnavn + '_' + padding.format(taeller) + extension
+                        print filnavn
+
+                        #wx.StaticText(self.panel, -1, filnavn, (1, taeller), style=wx.ALIGN_LEFT)
+                        num_items = self.lc.GetItemCount()
+                        self.lc.InsertStringItem(num_items, d)
+                        self.lc.SetStringItem(num_items, 1, filnavn)				
+
+                        #wx.ListCtrl(self, -1, style=wx.LC_REPORT)
+                        #taeller += 1
+                        print "Counter: ", taeller
+
+                        os.rename(d, filnavn)
+                        taeller += 1
+                        
+
+            else: #dialog.ShowModal() == wxID_OK:
+                print 'No directory.'
+                dialog.Destroy()
+
+        else: #dlg.ShowModal() == wx.ID_YES:
+            dlg.Destroy()
+            
+        os.chdir(homefolder)                         
+        num_items = self.lc.GetItemCount()
+        self.lc.InsertStringItem(num_items, "Working.")
+        print 'Working.'
+        timelapse_name=self.tc.GetValue()
+        files = glob.glob(arbejds_dir + '/*.*')
+        origname = os.path.basename(files[0])
+        print "Origname:", origname
+        #finding a mount of digits in filename
+        match = re.search('(\d+)\.\w+$', origname)
+        print 'Padding:', match.group(1)
+        match_beforedigits = re.split(match.group(1), origname)
+        print 'Name before padding:', match_beforedigits[0]
+
+        dig = len(match.group(1))
+        print 'How many digits in name:' ,dig
+        
+        suffix= os.path.splitext(files[0])[1]
+        print "Suffix:", suffix
+        #os.chdir(arbejds_dir)
+        print 'Work Folder:', homefolder
+        print 'Photo Folder:', arbejds_dir
+        # Command line for linux. Windows need to have ffmpeg binary in same folder as Batcher or in Path
+        command = "ffmpeg -f image2 -i " + arbejds_dir + "/" + match_beforedigits[0] + "%" + str(dig) + "d" + suffix + " -r 30 " + timelapse_name + ".mp4"
+        print command
+        args = command.split()
+        child = subprocess.Popen(args, shell=True)
+        child.communicate()
+        num_items = self.lc.GetItemCount()
+        self.lc.InsertStringItem(num_items, "Done. Find the timelapse video here: ")
+        self.lc.SetStringItem(num_items, 1, os.getcwd())
+        print 'Done.'
+              
+
     def OnInsert(self, event):
         dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
@@ -356,7 +633,7 @@ class Batcher(wx.Frame):
 
 
     def OnConvertRAWJPG(self, event):
-        dlg = wx.MessageDialog(self, 'Have you made a backup? There\'s almost no error correction in Batch Renamer.','Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        dlg = wx.MessageDialog(self, 'Have you made a backup? There\'s almost no error correction in Batcher.','Please Confirm', wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
         if dlg.ShowModal() == wx.ID_YES:
             dialog = wxDirDialog ( None, message = 'Pick a directory for converting photos.' )
             if dialog.ShowModal() == wxID_OK:
