@@ -1,5 +1,8 @@
 Batcher - Bulk renaming files using EXIF data.
 
+v1.11.5.5
+ -Code cleanup
+
 v1.11.5.4
  -Make greyscale photos
  -Code cleanup
