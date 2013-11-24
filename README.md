@@ -1,5 +1,9 @@
 Batcher - Bulk renaming files using EXIF data.
 
+v1.11.5.7
+ -Code cleanup
+ -It's now possible to handle one sublevel of directories for multiple photofolders when making timelapse videos.
+
 v1.11.5.5
  -Code cleanup
 

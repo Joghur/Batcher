@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Program der masse omdøber filnavne via deres dato
-#Version 1.11.5.5
+#Version 1.11.5.7
 
 License:
 
@@ -88,61 +88,67 @@ class Batcher(wx.Frame):
     #Menu ---------------------------------------------------------------  
         file = wx.Menu()
         file.Append(ID_EXIT, '&Quit\tCtrl+Q', 'Quit')
-
-        change = wx.Menu()
-        change.Append(ID_RENAME, '&Rename using EXIF data\tCtrl+R', 'Rename EXIF')
-        change.Append(ID_RENAMEDATE, '&Rename using filedate\tCtrl+D', 'Rename date')
-        change.Append(ID_CONSNUMBER, '&Rename with consecutive numbers\tCtrl+N', 'Rename consecutive numbers')       
+        #---------
+        change = wx.Menu()  #Menu
+        conv = wx.Menu()    #Submenu
+        rename = wx.Menu()  #Submenu
+        #--
+        change.AppendMenu(wx.ID_ANY, '&Convert', conv)        
+        change.AppendMenu(wx.ID_ANY, '&Rename', rename)  
         change.Append(ID_INSERT, '&Insert name\tCtrl+I', 'Insert')
-        change.Append(ID_CHANGE, '&Change EXIF date\tCtrl+E', 'Change EXIF date')
-        change.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+C', 'Convert -> JPG')
-        change.Append(ID_RESIZE, '&Resize\tCtrl+S', 'Resize')
-
+        change.Append(ID_CHANGE, 'Change &EXIF date\tCtrl+E', 'Change EXIF date')
+        change.Append(ID_RESIZE, 'Re&size\tCtrl+S', 'Resize')
+        #Submenus -----
+        conv.Append(ID_CONVERTRAWJPG, '&Convert -> JPG\tCtrl+C', 'Convert -> JPG')
+        conv.Append(ID_GREYSCALE, 'Convert to &greyscale\tCtrl+G', 'Convert to greyscale')
+        #--
+        rename.Append(ID_RENAME, '&Rename EXIF\tCtrl+R', 'Rename using EXIF data')
+        rename.Append(ID_RENAMEDATE, 'Rename using file&date\tCtrl+D', 'Rename date')
+        rename.Append(ID_CONSNUMBER, 'Rename consecutive &numbers\tCtrl+N', 'Renaming with consecutive numbers')
+        #---------
         timelapse = wx.Menu()
-        timelapse.Append(ID_GREYSCALE, '&Convert to greyscale', 'Convert to greyscale')        
+        timelapse.Append(ID_GREYSCALE, 'Convert to &greyscale\tCtrl+G', 'Convert to greyscale')        
         timelapse.Append(ID_REMOVEDARK, '&Remove dark photos', 'Remove dark photos and adjust brightness')        
-        timelapse.Append(ID_CONSNUMBER, '&Rename with consecutive numbers\tCtrl+N', 'Rename consecutive numbers')
+        timelapse.Append(ID_CONSNUMBER, 'Rename consecutive &numbers\tCtrl+N', 'Renaming with consecutive numbers')
         timelapse.Append(ID_TIMELAPSE, '&Timelapse\tCtrl+T', 'Timelapse')
-        timelapse.Append(ID_ALLINONE, '&All in one', 'Renaming and Timelapse')        
-
-        test = wx.Menu()
-        test.Append(ID_TEST, '&Test', 'Test')
-        
+        timelapse.Append(ID_ALLINONE, '&All in one\tCtrl+A', 'Removing dark photos, Renaming and Timelapse')        
+        #---------
+        #test = wx.Menu()
+        #test.Append(ID_TEST, '&Test', 'Test')
+        #---------
         help = wx.Menu()
         help.Append(ID_ABOUT, '&About', 'About')
-
+        #---------
         menubar = wx.MenuBar()
         menubar.Append(file, '&File')
         menubar.Append(change, '&Change')
         menubar.Append(timelapse, '&Timelapse')
-        menubar.Append(test, '&Test')    
+        #menubar.Append(test, '&Test')    
         menubar.Append(help, '&Help')
         self.SetMenuBar(menubar)
-
+        #---------
     
     #Toolbar ---------------------------------------------------------------    
         toolbar = wx.ToolBar(self, -1)
-        self.tc = wx.TextCtrl(toolbar, -1,size=(100, -1))
-        self.labeltc = wx.StaticText(toolbar, wx.ID_ANY, label="Filename", style=wx.ALIGN_CENTER)
-        self.tn = wx.TextCtrl(toolbar, -1,size=(100, -1))
-        self.labeltn = wx.StaticText(toolbar, wx.ID_ANY, label="Photographer", style=wx.ALIGN_CENTER)
-        #btn = wx.Button(toolbar, ID_BUTTON, 'Ok', size=(40, 28))
-        self.tr = wx.TextCtrl(toolbar, -1, size=(100, -1))
-        self.labeltr = wx.StaticText(toolbar, wx.ID_ANY, label="Size in %", style=wx.ALIGN_CENTER)
-        self.ts = wx.TextCtrl(toolbar, -1, size=(100, -1))
-        self.labelts = wx.StaticText(toolbar, wx.ID_ANY, label="Quality", style=wx.ALIGN_CENTER)
-        toolbar.AddControl(self.labeltc)
-        toolbar.AddControl(self.tc)
+        self.tcFilename = wx.TextCtrl(toolbar, -1,size=(100, -1))
+        self.labelFilename = wx.StaticText(toolbar, wx.ID_ANY, label="Filename", style=wx.ALIGN_CENTER)
+        self.tcFotograf = wx.TextCtrl(toolbar, -1,size=(100, -1))
+        self.labelFotograf = wx.StaticText(toolbar, wx.ID_ANY, label="Photographer", style=wx.ALIGN_CENTER)
+        self.tcSize = wx.TextCtrl(toolbar, -1, size=(35, -1))
+        self.labelSize = wx.StaticText(toolbar, wx.ID_ANY, label="Size (%)", style=wx.ALIGN_CENTER)
+        self.tcQuality = wx.TextCtrl(toolbar, -1, size=(35, -1))
+        self.labelQuality = wx.StaticText(toolbar, wx.ID_ANY, label="Quality (%)", style=wx.ALIGN_CENTER)
+        toolbar.AddControl(self.labelFilename)
+        toolbar.AddControl(self.tcFilename)
         toolbar.AddSeparator()
-        toolbar.AddControl(self.labeltn)
-        toolbar.AddControl(self.tn)
+        toolbar.AddControl(self.labelFotograf)
+        toolbar.AddControl(self.tcFotograf)
         toolbar.AddSeparator()
-        toolbar.AddControl(self.labeltr)
-        toolbar.AddControl(self.tr)
+        toolbar.AddControl(self.labelSize)
+        toolbar.AddControl(self.tcSize)
         toolbar.AddSeparator()
-        toolbar.AddControl(self.labelts)
-        toolbar.AddControl(self.ts)
-        #toolbar.AddControl(btn)
+        toolbar.AddControl(self.labelQuality)
+        toolbar.AddControl(self.tcQuality)
         toolbar.Realize()
         self.SetToolBar(toolbar)
         
@@ -162,21 +168,20 @@ class Batcher(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnResize, id=ID_RESIZE)
         self.Bind(wx.EVT_MENU, self.OnExit, id=ID_EXIT)   
         self.Bind(wx.EVT_TIMER, self.OnTimer, id=ID_TIMER)
-        self.Bind(wx.EVT_MENU, self.OnTest, id=ID_TEST)        
-
+        self.Bind(wx.EVT_MENU, self.OnTest, id=ID_TEST)
+        
         self.panel = wx.Panel(self, -1, (0, 0), (1000 , 500))
         self.panel.SetBackgroundColour('WHITE')
         self.sizer=wx.BoxSizer(wx.VERTICAL)
-        #self.sizer.Add(self.panel, 1, wx.EXPAND)
 
     
     #Listcontrol -----------------------------------------------
-        self.lc = wx.ListCtrl(self, -1, style=wx.LC_REPORT)
-        self.lc.InsertColumn(0, 'Before')
-        self.lc.InsertColumn(1, 'After')
-        self.lc.SetColumnWidth(0, 300)
-        self.lc.SetColumnWidth(1, 300)
-        self.sizer.Add(self.lc, 1, wx.EXPAND | wx.ALL, 3)
+        self.lcWindow = wx.ListCtrl(self, -1, style=wx.LC_REPORT)
+        self.lcWindow.InsertColumn(0, 'Before')
+        self.lcWindow.InsertColumn(1, 'After')
+        self.lcWindow.SetColumnWidth(0, 300)
+        self.lcWindow.SetColumnWidth(1, 300)
+        self.sizer.Add(self.lcWindow, 1, wx.EXPAND | wx.ALL, 3)
         self.SetSizer(self.sizer)
 
     #Statusbar -------------------------------------------------
@@ -196,7 +201,7 @@ class Batcher(wx.Frame):
 #---------------------------------------------------------------
 
     def OnAbout(self, event):
-        dlg = wx.MessageDialog(self, 'Batcher\t\n' 'v1.11.5.5\t\n' '\t\n' 'Martin B. Sander-Thomsen\t\n' 'Project: www.github.com/Joghur/Batcher\t', 'About', wx.OK | wx.ICON_INFORMATION)
+        dlg = wx.MessageDialog(self, 'Batcher\t\n' 'v1.11.5.7\t\n' '\t\n' 'Martin B. Sander-Thomsen\t\n' 'Project: www.github.com/Joghur/Batcher\t', 'About', wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -205,9 +210,11 @@ class Batcher(wx.Frame):
 #---------------------------------------------------------------
             
     def OnAllInOne(self, event):
-        self.RemoveDark()
-        self.ConsNUMBER()
-        self.Timelapse()
+        dialog = self.get_folder('Pick a directory containing photos.')
+        if dialog != None:
+            self.RemoveDark(dialog)
+            self.ConsNUMBER(dialog)
+            self.Timelapse(dialog)
 
 #---------------------------------------------------------------
 
@@ -217,7 +224,7 @@ class Batcher(wx.Frame):
 #---------------------------------------------------------------
 
     def OnConsNUMBER(self, event):
-        self.ConsNUMBER()
+        self.ConsNUMBER(None) # ConsNUMBER functions needs a string arg or None
 
 #---------------------------------------------------------------
 
@@ -237,7 +244,7 @@ class Batcher(wx.Frame):
 #---------------------------------------------------------------           
 
     def OnRemoveDark(self, event):
-        self.RemoveDark()
+        self.RemoveDark(None) # RemoveDark functions needs a string arg or None
 
 #---------------------------------------------------------------
         
@@ -267,13 +274,40 @@ class Batcher(wx.Frame):
 #---------------------------------------------------------------
             
     def OnTimelapse(self, event):
-        self.Timelapse()
+        dialog = self.get_folder('Pick a directory containing photos.')
+        if dialog != None:
+            os.chdir(dialog)
+            dirList3 = os.listdir("./")
+            dirList3.sort()
+            for t in dirList3:
+                os.chdir(dialog)
+                if os.path.isdir(t)==True:
+                    os.chdir(t)
+                    print "Using subdirectory: ", os.getcwd()
+                    self.Timelapse(os.getcwd())
+                    if self.Timelapse!=False:
+                        num_items = self.lcWindow.GetItemCount()
+                        origin = os.getcwd() + "/" + t + ".avi"
+                        shutil.move(origin, dialog)
+                        self.lcWindow.InsertStringItem(num_items, "Done. Find the timelapse video here: ")
+                        self.lcWindow.SetStringItem(num_items, 1, dialog)
+                else:
+                    print "Using directory: ", dialog
+                    self.Timelapse(dialog)
+                    if self.Timelapse!=False:
+                        num_items = self.lcWindow.GetItemCount()
+                        self.lcWindow.InsertStringItem(num_items, "Done. Find the timelapse video here: ")
+                        self.lcWindow.SetStringItem(num_items, 1, dialog)
+        else:
+            return
+
+        
         
 #---------------------------------------------------------------
             
 
     #def OnLaunchCommandOk(self, event):
-    #    input = self.tc.GetValue()
+    #    input = self.tcFilename.GetValue()
     #    if input == '/bye':
     #        self.OnExit(self)
     #    elif input == '/about':
@@ -286,7 +320,7 @@ class Batcher(wx.Frame):
     #        self.statusbar.Refresh()
     #        self.timer.Start(50)
 
-    #    self.tc.Clear()
+    #    self.tcFilename.Clear()
 
 #---------------------------------------------------------------
     
@@ -299,157 +333,216 @@ class Batcher(wx.Frame):
             self.blick = 0
 
             
-#---------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------
 #Non event functions
-#---------------------------------------------------------------            
-        
+#------------------------------------------------------------------------------------------------------------------------------         
+
+ 
+#---------------------------------------------------------------
+      
     def Change(self):
         dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()    
 
 #---------------------------------------------------------------
 
-    def ConsNUMBER(self):
-        if dlg.ShowModal() == wx.ID_YES:
-            dialog = wxDirDialog ( None, message = 'Pick a directory for renaming files.' )
-            if dialog.ShowModal() == wxID_OK:
-                print 'Directory:', dialog.GetPath()
-                nylig_lavet_folder=False
-                sidste_fil=""
-                flyt_fil=False
-                folder_lavet=False
-                #dirList = os.listdir("./")
-                #dirList.sort()
-                #dirList = str(dirList)
-                #u = unicode( dirList, "utf-8" )
-                taeller = 1
-
-                #print u, taeller
-
-                arbejds_dir=dialog.GetPath() #raw_input('Indtast foldernavn--> ')
-                arbejds_filnavn=self.tc.GetValue() #raw_input('Indtast ønsket filnavn--> ')
-
-                os.chdir(arbejds_dir)
-
-                print 'Work Folder:', os.getcwd()
-                dirList = os.listdir("./")
-                dirList.sort()
-                print 'getcwd:', dirList
-                dirlistlen = len(dirList)
-                print 'Number of items in work folder:', dirlistlen
-                if dirlistlen > 9:
-                    if dirlistlen > 99:
-                        if dirlistlen > 999:
-                            if dirlistlen > 9999:
-                                if dirlistlen > 99999:
-                                    if dirlistlen > 999999:
-                                        padding="{0:07d}"
-                                    else:
-                                        padding="{0:06d}"
-                                else:
-                                    padding="{0:05d}"
+    def ConsNUMBER(self, args):
+        if args==None:
+            dialog = self.get_folder('Pick a directory containing timelapse photos. Photos need to be in named in consecutive order.')
+            if dialog != None:            
+                arbejds_dir=dialog
+            else:
+                return
+        else:
+            arbejds_dir=args
+            
+        os.chdir(arbejds_dir)
+        taeller = 1
+        arbejds_filnavn=self.tcFilename.GetValue()
+        print "Filename: ", arbejds_filnavn
+        dirList = os.listdir("./")
+        dirList.sort()
+        dirlistlen = len(dirList)
+        print 'Number of items in work folder:', dirlistlen
+        if dirlistlen > 9:
+            if dirlistlen > 99:
+                if dirlistlen > 999:
+                    if dirlistlen > 9999:
+                        if dirlistlen > 99999:
+                            if dirlistlen > 999999:
+                                padding="{0:07d}"
                             else:
-                                padding="{0:04d}"
+                                padding="{0:06d}"
                         else:
-                            padding="{0:03d}"
+                            padding="{0:05d}"
                     else:
-                        padding="{0:02d}"
+                        padding="{0:04d}"
                 else:
-                    padding="{0:01d}"
-                    
-
-                for d in dirList:
-                    if os.path.isdir(d) == False: #Check if "file" is not a folder
-                        suffix = os.path.splitext(d)[1]
-                        suffix = suffix.lower()
-                        if isa_image(d): #Check if file is an image
-                            print d, " is an image!"
-                            extension = os.path.splitext(d)[1]
-                            temp_file=d
-
-                            filnavn = arbejds_filnavn + '_' + padding.format(taeller) + extension
-                            print filnavn
-
-                            #wx.StaticText(self.panel, -1, filnavn, (1, taeller), style=wx.ALIGN_LEFT)
-                            num_items = self.lc.GetItemCount()
-                            self.lc.InsertStringItem(num_items, d)
-                            self.lc.SetStringItem(num_items, 1, filnavn)				
-
-                            #wx.ListCtrl(self, -1, style=wx.LC_REPORT)
-                            #taeller += 1
-                            print "Counter: ", taeller
-
-                            os.rename(d, filnavn)
-                            taeller += 1
+                    padding="{0:03d}"
+            else:
+                padding="{0:02d}"
+        else:
+            padding="{0:01d}"
+            
+        for d in dirList:
+            os.chdir(arbejds_dir)
+            if is_image(d): #Check if file is an image
+                print d, "is an image!"
+                extension = os.path.splitext(d)[1]
+                temp_file=d
+                filnavn = arbejds_filnavn + '_' + padding.format(taeller) + extension
+                print filnavn
+                num_items = self.lcWindow.GetItemCount()
+                self.lcWindow.InsertStringItem(num_items, d)
+                self.lcWindow.SetStringItem(num_items, 1, filnavn)				
+                print "Counter: ", taeller
+                print "---"
+                os.rename(d, filnavn)
+                taeller += 1
+            elif os.path.isdir(d)==True:
+                os.chdir(d)
+                print d, " is a subfolder!"
+                dirList2 = os.listdir("./")
+                dirList2.sort()
+                taeller2 = 1
+                dirlistlen2 = len(dirList2)
+                print 'Number of items in work folder:', dirlistlen2
+                if dirlistlen2 > 9:
+                    if dirlistlen2 > 99:
+                        if dirlistlen2 > 999:
+                            if dirlistlen2 > 9999:
+                                if dirlistlen2 > 99999:
+                                    if dirlistlen2 > 999999:
+                                        padding2="{0:07d}"
+                                    else:
+                                        padding2="{0:06d}"
+                                else:
+                                    padding2="{0:05d}"
+                            else:
+                                padding2="{0:04d}"
                         else:
-                            print d, " is NOT an image!"
+                            padding2="{0:03d}"
+                    else:
+                        padding2="{0:02d}"
+                else:
+                    padding2="{0:01d}"
+                    
+                for d2 in dirList2:
+                    print "Subdirectory: ", d
+                    if is_image(d2): #Check if file is an image
+                        print d2, "is an image!"
+                        extension2 = os.path.splitext(d2)[1]
+                        temp_file=d2
+                        filnavn2 = d + '_' + padding2.format(taeller2) + extension2
+                        print filnavn2
+                        num_items = self.lcWindow.GetItemCount()
+                        self.lcWindow.InsertStringItem(num_items, d2)
+                        self.lcWindow.SetStringItem(num_items, 1, filnavn2)				
+                        print "Counter: ", taeller2
+                        print "---"
+                        os.rename(d2, filnavn2)
+                        taeller2 += 1                    
+                    else:
+                        print d2, " is NOT an image!"
+                        print "---"
+            
+            else:
+                print d, " is NOT an image or a folder!"
+                print "---"
 
-            else: #dialog.ShowModal() == wxID_OK:
-                print 'No directory.'
-                dialog.Destroy()
+        print "Done."
             
 #---------------------------------------------------------------
 
     def ConvertRAWJPG(self):
-        dialog = wxDirDialog ( None, message = 'Pick a directory for converting photos.' )
-        if dialog.ShowModal() == wxID_OK:
-            arbejds_dir=dialog.GetPath()
-            arbejds_filsize=self.tr.GetValue()
+        dialog = self.get_folder('Pick a directory for converting photos.')
+        if dialog != None:            
+            arbejds_dir=dialog
             os.chdir(arbejds_dir)
-            print 'Work Folder:', os.getcwd()
-            dirList = os.listdir("./")
-            dirList.sort()
-            #for d in dirList:
-            print 'getcwd:', dirList
-            for d in dirList:
-                if os.path.isdir(d) == False:
+        else:
+            return
+        dirList = os.listdir("./")
+        dirList.sort()
+        #for d in dirList:
+        print 'getcwd:', dirList
+        for d in dirList:
+            if os.path.isdir(d) == False:
+                if is_image(d): #Check if file is an image
+                    print d, "is an image!"
                     temp_file=d
                     d3 = os.path.splitext(d)[0]
                     arg = d + " " + d3 + ".jpg"
                     print "Arg=", arg
-                    print 'Work Folder:', os.getcwd()
 
                     # Command line for linux
                     command = "convert " + arg
                     print command
+                    print "---"
 
-                    num_items = self.lc.GetItemCount()
-                    self.lc.InsertStringItem(num_items, d)
-                    self.lc.SetStringItem(num_items, 1, d3 + ".jpg")
+                    num_items = self.lcWindow.GetItemCount()
+                    self.lcWindow.InsertStringItem(num_items, d)
+                    self.lcWindow.SetStringItem(num_items, 1, d3 + ".jpg")
                     child = subprocess.Popen(command, shell=True)
-                    child.communicate()						
+                    child.communicate()
+                else:
+                    print d, "is NOT an image!"
+                    print "---"
+
+#---------------------------------------------------------------
+
+    def get_folder(self, dialog_text):
+        dialog = wxDirDialog ( None, message = dialog_text)
+        if dialog.ShowModal() == wxID_OK:
+            arbejds_dir=dialog.GetPath()
+            print "Working folder: ", arbejds_dir
+            return arbejds_dir
         else: #dialog.ShowModal() == wxID_OK:
             print 'No directory.'
+            return None
 
 #---------------------------------------------------------------
             
     def Greyscale(self):
-        dialog = wxDirDialog ( None, message = 'Pick a directory containing photos. Photos will be converted to greyscale.' )
-        if dialog.ShowModal() == wxID_OK:
-            arbejds_dir=dialog.GetPath()
+        dialog = self.get_folder('Pick a directory containing photos. Photos will be converted to greyscale.')
+        if dialog != None:            
+            arbejds_dir=dialog
             os.chdir(arbejds_dir)
-            dirList2 = os.listdir("./")
-            dirList2.sort()
-            print 'Work Folder:', os.getcwd()
-            for d in dirList2:
-                suffix = os.path.splitext(d)[1]
-                suffix = suffix.lower()
-                if isa_image(d): #Check if file is an image
-                    print d, " is an image!"
-                    origname = os.path.splitext(d)[0]
-                    suffix= os.path.splitext(d)[1]
-                    print "Original filename:", origname
-                    print "Suffix:", suffix
-                    im = Image.open(d) #convert('LA')
-                    im = ImageOps.grayscale(im)
-                    im.save(d)
-                    
-                else:
-                    print d, " is NOT an image!"
-                
-        else: #dialog.ShowModal() == wxID_OK:
-            print 'No directory.'
+        else:
+            return
 
+        dirList = os.listdir("./")
+        dirList.sort()
+        for d in dirList:
+            os.chdir(arbejds_dir)
+            if is_image(d): #Check if file is an image
+                print d, " is an image!"
+                print "Converting ", d, " to greyscale."
+                print "---"
+                im = Image.open(d)
+                im = ImageOps.grayscale(im)
+                im.save(d)
+            elif os.path.isdir(d)==True:
+                os.chdir(d)
+                print d, " is a folder!"
+                dirList2 = os.listdir("./")
+                dirList2.sort()
+                for d2 in dirList2:
+                    print "Subdirectory: ", d
+                    if is_image(d2): #Check if file is an image
+                        print d2, " is an image!"
+                        print "Converting ", d2, " to greyscale."
+                        print "---"
+                        im2 = Image.open(d2)
+                        im2 = ImageOps.grayscale(im2)
+                        im2.save(d2)
+                    else:
+                        print d2, " is NOT an image!"
+                        print "---"
+            else:
+                print d, " is NOT an image or folder!"
+                print "---"
+
+        print "Done."
 #---------------------------------------------------------------
 
     def Insert(self):
@@ -458,177 +551,192 @@ class Batcher(wx.Frame):
 
  #---------------------------------------------------------------           
 
-    def RemoveDark(self):
-        
-            dialog = wxDirDialog ( None, message = 'Pick a directory containing photos. Dark photos will be removed and brightness will be controlled.' )
-            if dialog.ShowModal() == wxID_OK:
-                arbejds_dir=dialog.GetPath()
-                os.chdir(arbejds_dir)
+    def RemoveDark(self, args):
+        if args==None:
+            dialog = self.get_folder('Pick a directory containing photos. Dark photos will be removed and brightness will be controlled.')
+            if dialog != None:            
+                arbejds_dir=dialog
+            else:
+                return
+        else:
+            arbejds_dir=args
+            
+        os.chdir(arbejds_dir)
+        dirList = os.listdir("./")
+        dirList.sort()
+        for d in dirList:
+            os.chdir(arbejds_dir)
+            if is_image(d): #Check if file is an image
+                im = Image.open(d).convert('L')
+                stat = ImageStat.Stat(im)
+                print "Brightness value for ", d, " (<105 is considered a dark photo): ", stat.rms[0]
+                if stat.rms[0] < 105:
+                    os.remove(d)
+                    print d, " is too dark. It is removed!"
+                    print "---"
+                else:
+                    #Brigthness nomalization
+                    img = Image.open(d)
+                    enhancer = ImageEnhance.Brightness(img)
+                    factor = 120 /stat.rms[0]
+                    img_enhanced = enhancer.enhance(factor)
+                    img_enhanced.save(d)
+                    print "Picture ", d, " adjusted brightness by factor of ", factor, "!"
+                    print "---"
+            elif os.path.isdir(d)==True:
+                os.chdir(d)
+                print d, " is a folder!"
                 dirList2 = os.listdir("./")
-                dirList2.sort()
-                print 'Work Folder:', os.getcwd()
-                for d in dirList2:
-                    suffix = os.path.splitext(d)[1]
-                    suffix = suffix.lower()
-                    if isa_image(d): #Check if file is an image
-                        origname = os.path.basename(d)
-                        print "Origname:", origname
-                        print "Suffix:", suffix
-                        im = Image.open(d).convert('L')
-                        stat = ImageStat.Stat(im)
-                        print "Brightness value (<90 is a dark photo)", stat.rms[0]
-                        if stat.rms[0] < 90:
-                            os.remove(d)
-                            print d, " is too dark. It is removed"
+                dirList2.sort()                
+                for d2 in dirList2:
+                    print "Subdirectory: ", d
+                    if is_image(d2): #Check if file is an image
+                        im2 = Image.open(d2).convert('L')
+                        stat = ImageStat.Stat(im2)
+                        print "Brightness value for ", d2, " (<105 is considered a dark photo): ", stat.rms[0]
+                        if stat.rms[0] < 105:
+                            os.remove(d2)
+                            print d2, " is too dark. It is removed!"
+                            print "---"
                         else:
                             #Brigthness nomalization
-                            img = Image.open(d)
-                            enhancer = ImageEnhance.Brightness(img)
-                            factor = 120 /stat.rms[0]
-                            img_enhanced = enhancer.enhance(factor)
-                            img_enhanced.save(d)
-                            print "Picture ", d, " now has a brightness factor of ", factor
+                            img2 = Image.open(d2)
+                            enhancer2 = ImageEnhance.Brightness(img2)
+                            factor2 = 120 /stat.rms[0]
+                            img_enhanced2 = enhancer2.enhance(factor2)
+                            img_enhanced2.save(d2)
+                            print "Picture ", d2, " adjusted brightness by factor of ", factor2, "!"
+                            print "---"
                     else:
-                        print d, " is not an image!"
-
-            else: #dialog.ShowModal() == wxID_OK:
-                print 'No directory.'
+                        print d2, " is NOT an image!"
+                        print "---"
+            else:
+                print d, " is NOT an image or folder!"
+                print "---"
+                
+        print "Done."
 
  #---------------------------------------------------------------
         
     def Rename(self):
-        if dlg.ShowModal() == wx.ID_YES:
-            dialog = wxDirDialog ( None, message = 'Pick a directory for renaming files.' )
-            if dialog.ShowModal() == wxID_OK:
-                print 'Directory:', dialog.GetPath()
-                nylig_lavet_folder=False
-                sidste_fil=""
-                flyt_fil=False
-                folder_lavet=False
-                #dirList = os.listdir("./")
-                #dirList.sort()
-                #dirList = str(dirList)
-                #u = unicode( dirList, "utf-8" )
-                taeller = 1
+        dialog = self.get_folder( 'Pick a directory for renaming files.')
+        if dialog != None:            
+            arbejds_dir=dialog
+        else:
+            return
+            
+        os.chdir(arbejds_dir)            
+        nylig_lavet_folder=False
+        sidste_fil=""
+        flyt_fil=False
+        folder_lavet=False
+        taeller = 1
+        arbejds_filnavn=self.tcFilename.GetValue()
+        fotograf=self.tcFotograf.GetValue()
+        if fotograf=="":
+            pass
+        else:
+            fotograf= fotograf + "_"
 
-                #print u, taeller
+        dirList = os.listdir("./")
+        dirList.sort()
+        print 'getcwd:', dirList
+        def modification_date(filename):
+            t = os.path.getmtime(filename)
+            return datetime.datetime.fromtimestamp(t)
 
-                arbejds_dir=dialog.GetPath() #raw_input('Indtast foldernavn--> ')
-                arbejds_filnavn=self.tc.GetValue() #raw_input('Indtast ønsket filnavn--> ')
-                fotograf=self.tn.GetValue()
-                if fotograf=="":
-                    pass
-                else:
-                    fotograf= fotograf + "_"
+        def get_exif(fn):
+            ret = {}
+            i = Image.open(fn)
+            info = i._getexif()
+            try:
+                for tag, value in info.items():
+                    decoded = TAGS.get(tag, tag)
+                    #print "Decoded=", decoded
+                    if decoded == "DateTimeOriginal":
+                        ret[decoded] = value
 
-                os.chdir(arbejds_dir)
-
-                print 'Work Folder:', os.getcwd()
-                dirList = os.listdir("./")
-                dirList.sort()
-                print 'getcwd:', dirList
-                def modification_date(filename):
-                    t = os.path.getmtime(filename)
-                    return datetime.datetime.fromtimestamp(t)
-
-                def get_exif(fn):
-                    ret = {}
-                    i = Image.open(fn)
-                    info = i._getexif()
-                    for tag, value in info.items():
-                        decoded = TAGS.get(tag, tag)
-                        #print "Decoded=", decoded
-                        if decoded == "DateTimeOriginal":
-                            ret[decoded] = value
-
-                    return ret['DateTimeOriginal']
-           
-                for d in dirList:
+                return ret['DateTimeOriginal']
+            
+            except ImportError:
+                raise ImportError,"This photo may not have EXIF data present"
+        
+        for d in dirList:
+            #d2 = modification_date(d)
+            if os.path.isdir(d) == False:
+                if is_image(d): #Check if file is an image
+                    print d, "is an image!"
                     d2 = get_exif(d)
-                    #d2 = modification_date(d)
-                    if os.path.isdir(d) == False:
-                        if isa_image(d): #Check if file is an image
-                            print d, " is an image!"
-                            exif=2                        
-                            temp_file=d
-                            if exif==1: #bruger fil dato
-                                th = str(d2.hour)
-                                if len(th)==1:
-                                    th="0" + th
+                    exif=2                        
+                    temp_file=d
+                    if exif==1: #bruger fil dato
+                        th = str(d2.hour)
+                        if len(th)==1:
+                            th="0" + th
 
-                                tm = str(d2.minute)
-                                if len(tm)==1:
-                                    tm="0" + tm
+                        tm = str(d2.minute)
+                        if len(tm)==1:
+                            tm="0" + tm
 
-                                ts = str(d2.second)
-                                if len(ts)==1:
-                                    ts='0' + ts
+                        ts = str(d2.second)
+                        if len(ts)==1:
+                            ts='0' + ts
 
-                                ty = str(d2.year)
+                        ty = str(d2.year)
 
-                                tmo = str(d2.month)
-                                if len(tmo)==1:
-                                    tmo='0' + tmo
+                        tmo = str(d2.month)
+                        if len(tmo)==1:
+                            tmo='0' + tmo
 
-                                td = str(d2.day)
-                                if len(td)==1:
-                                    td="0" + td
-                                extra='_'
-                                if arbejds_filnavn=="":
-                                    extra=''
+                        td = str(d2.day)
+                        if len(td)==1:
+                            td="0" + td
+                        extra='_'
+                        if arbejds_filnavn=="":
+                            extra=''
 
-                            if exif==2: #bruger exif data
-                                #th = str(d2.hour)
-                                dt = datetime.datetime.strptime(d2, "%Y:%m:%d %H:%M:%S")
-                                th=str(dt.hour)
-                                #print "dt", dt
-                                if len(th)==1:
-                                    th="0" + th
+                    if exif==2: #bruger exif data
+                        #th = str(d2.hour)
+                        dt = datetime.datetime.strptime(d2, "%Y:%m:%d %H:%M:%S")
+                        th=str(dt.hour)
+                        #print "dt", dt
+                        if len(th)==1:
+                            th="0" + th
 
-                                tm = str(dt.minute)
-                                if len(tm)==1:
-                                    tm="0" + tm
+                        tm = str(dt.minute)
+                        if len(tm)==1:
+                            tm="0" + tm
 
-                                ts = str(dt.second)
-                                if len(ts)==1:
-                                    ts='0' + ts
+                        ts = str(dt.second)
+                        if len(ts)==1:
+                            ts='0' + ts
 
-                                ty = str(dt.year)
+                        ty = str(dt.year)
 
-                                tmo = str(dt.month)
-                                if len(tmo)==1:
-                                    tmo='0' + tmo
+                        tmo = str(dt.month)
+                        if len(tmo)==1:
+                            tmo='0' + tmo
 
-                                td = str(dt.day)
-                                if len(td)==1:
-                                    td="0" + td
-                                extra='_'
-                                if arbejds_filnavn=="":
-                                    extra=''
+                        td = str(dt.day)
+                        if len(td)==1:
+                            td="0" + td
+                        extra='_'
+                        if arbejds_filnavn=="":
+                            extra=''
 
-                            nytnavn=extra + ty + '-' + tmo + '-' + td + '_' + th + tm + ts
-                            print nytnavn
-                            print "Photographer:", fotograf
-                            filnavn = arbejds_filnavn + nytnavn + '_' + fotograf + d
-                            print filnavn
-
-                            #wx.StaticText(self.panel, -1, filnavn, (1, taeller), style=wx.ALIGN_LEFT)
-                            num_items = self.lc.GetItemCount()
-                            self.lc.InsertStringItem(num_items, d)
-                            self.lc.SetStringItem(num_items, 1, filnavn)				
-
-                            #wx.ListCtrl(self, -1, style=wx.LC_REPORT)
-                            #taeller += 1
-                            #print "Tæller: ", taeller
-
-
-                            os.rename(d, filnavn)
-                        else: #isa_image(d): #Check if file is an image
-                            print d ," is not an image!"
-
-            else: #dialog.ShowModal() == wxID_OK:
-                print 'No directory.'
-                dialog.Destroy()
+                    nytnavn=extra + ty + '-' + tmo + '-' + td + '_' + th + tm + ts
+                    print nytnavn
+                    print "Photographer:", fotograf
+                    filnavn = arbejds_filnavn + nytnavn + '_' + fotograf + d
+                    print filnavn
+                    print "---"
+                    num_items = self.lcWindow.GetItemCount()
+                    self.lcWindow.InsertStringItem(num_items, d)
+                    self.lcWindow.SetStringItem(num_items, 1, filnavn)				
+                    os.rename(d, filnavn)
+                else:
+                    print d, " is NOT an image!"
+                    print "---"
 
 #---------------------------------------------------------------
 
@@ -645,103 +753,90 @@ class Batcher(wx.Frame):
 #---------------------------------------------------------------
             
     def Resize(self):
-        dialog = wxDirDialog ( None, message = 'Pick a directory for resizing photos.' )
-        if dialog.ShowModal() == wxID_OK:
-            arbejds_dir=dialog.GetPath()
-            arbejds_filsize=self.tr.GetValue()
-            arbejds_quality=self.ts.GetValue()
-            os.chdir(arbejds_dir)
-            dirList2 = os.listdir("./")
-            dirList2.sort()
-            for d in dirList2:
-                suffix = os.path.splitext(d)[1]
-                suffix = suffix.lower()
-                if isa_image(d): #Check if file is an image
-                    print d, " is an image!"
-                    origname = os.path.splitext(d)[0]
-                    suffix= os.path.splitext(d)[1]
-                    print "Original filename:", origname
-                    print "Suffix:", suffix
-                    arg = " " + "-resize " + arbejds_filsize + " " + "-quality " + arbejds_quality + " "
-                    print 'Work Folder:', os.getcwd()
-                    # Command line for linux
-                    command = "convert " + d + arg + d
-                    print command
-                    child = subprocess.Popen(command, shell=True)
-                    child.communicate()
+        dialog = self.get_folder('Pick a directory for resizing photos.')
+        if dialog != None:            
+            arbejds_dir=dialog
+        else:
+            return
 
-        else: #dialog.ShowModal() == wxID_OK:
-            print 'No directory.'              
+        os.chdir(arbejds_dir)
+        arbejds_filsize=self.tcSize.GetValue()
+        arbejds_quality=self.tcQuality.GetValue()
+        dirList = os.listdir("./")
+        dirList.sort()
+        for d in dirList:
+            if is_image(d): #Check if file is an image
+                print d, " is an image!"
+                arg = " " + "-resize " + arbejds_filsize + " " + "-quality " + arbejds_quality + " "
+                # Command line for linux
+                command = "convert " + d + arg + d
+                print command
+                print "---"
+                child = subprocess.Popen(command, shell=True)
+                child.communicate()
+            else:
+                print d, " is NOT an image!"
+                print "---"             
 
 #---------------------------------------------------------------
 
-     
     def Test():
         pass
         return
 
 #---------------------------------------------------------------
     
-    def Timelapse(self):
-        dialog = wxDirDialog ( None, message = 'Pick a directory containing timelapse photos. Photos need to be in named in consecutive order' )
-        if dialog.ShowModal() == wxID_OK:
-            num_items = self.lc.GetItemCount()
-            self.lc.InsertStringItem(num_items, "Working.")
-            print 'Working.'
-            timelapse_name=self.tc.GetValue()             
-            arbejds_dir=dialog.GetPath()
-            files = glob.glob(arbejds_dir + '/*.*')
-            for i in range(0,len(files)):
-                temp = os.path.basename(files[i])
-                
+    def Timelapse(self, masterdir):
+        if masterdir==None:
+            dialog = self.get_folder('Pick a directory containing timelapse photos. Photos need to be in named in consecutive order.')
+            if dialog != None:            
+                arbejds_dir=dialog
+            else:
+                return False
+        else:
+            arbejds_dir=masterdir
+
+        num_items = self.lcWindow.GetItemCount()
+        self.lcWindow.InsertStringItem(num_items, "Working.")
+        print 'Working.'            
+        #timelapse_name=self.tcFilename.GetValue()
+        files = glob.glob(arbejds_dir + '/*.*')
+        for i in range(0,len(files)):
+            temp = os.path.basename(files[i])
+            suffix = os.path.splitext(temp)[1]
+            suffix = suffix.lower()
+            if is_image(temp):
+                origname = os.path.basename(files[i])
+                print temp, " is an image!"
                 suffix = os.path.splitext(temp)[1]
-                suffix = suffix.lower()
-                print "Temp: ", temp
-                print "Suffix: ", suffix
-                if isa_image(temp):
-                    origname = os.path.basename(files[i])
-                    print temp, " is an image!"
-                    suffix = os.path.splitext(temp)[1]
-                    break
-                else:
-                    print temp, " is NOT an image!"
-            #finding amount of digits in filename
-            match = re.search('(\d+)\.\w+$', origname)
-            print 'Padding:', match.group(1)
-            match_beforedigits = re.split(match.group(1), origname)
-            print 'Name before padding:', match_beforedigits[0]
-
-            dig = len(match.group(1))
-            print 'How many digits in name:' ,dig
-            
-            #suffix= os.path.splitext(files[0])
-            print "Suffix:", suffix
-            os.chdir(arbejds_dir)
-            #print 'Work Folder:', os.getcwd()
-            print 'Photo Folder:', arbejds_dir
-            # Command line for linux. Windows need to have ffmpeg binary in same folder as Batcher or in Path
-            #command = "ffmpeg -f image2 -i " + match_beforedigits[0] + "%" + str(dig) + "d" + suffix + " -r 30 " + timelapse_name + ".mp4"
-            command = "ffmpeg -f image2 -i " + arbejds_dir + "/" + match_beforedigits[0] + "%" + str(dig) + "d" + suffix + " -r 30 " + arbejds_dir + "/" + timelapse_name + ".mkv"
-            print "Command: ", command
-            args = command.split()
-            print "Args: ", args
-            #child = subprocess.Popen(args, shell=True)
-            child = subprocess.Popen(command, shell=True)
-            child.communicate()
-            num_items = self.lc.GetItemCount()
-            self.lc.InsertStringItem(num_items, "Done. Find the timelapse video here: ")
-            self.lc.SetStringItem(num_items, 1, arbejds_dir)
-            print 'Done.'
-
-        else: #dialog.ShowModal() == wxID_OK:
-            print 'No directory.'
+                print "Using ", suffix, " files as base for video"
+                break
+            else:
+                print temp, " is NOT an image!"
+                
+        #finding amount of digits in filename
+        match = re.search('(\d+)\.\w+$', origname)
+        print 'Padding:', match.group(1)
+        match_beforedigits = re.split(match.group(1), origname)
+        print 'Name before padding:', match_beforedigits[0]
+        dig = len(match.group(1))
+        print 'How many digits in name:' ,dig
+        print 'Photo Folder:', arbejds_dir
+        # Command line for linux. Windows need to have ffmpeg binary in same folder as Batcher or in PATH
+        command = "ffmpeg -f image2 -i " + arbejds_dir + "/" + match_beforedigits[0] + "%" + str(dig) + "d" + suffix + " -r 30 " + arbejds_dir + "/" + match_beforedigits[0] + ".avi"
+        print command
+        child = subprocess.Popen(command, shell=false)
+        child.communicate()
+        print 'Done.'
+        print "---"
+        return True
         
 
 #-------------------------------------------------------------------------------------------------------------  
 #MAIN
 #-------------------------------------------------------------------------------------------------------------    
 
-def isa_image(filename):
+def is_image(filename):
     temp = os.path.basename(filename)
     suffix = os.path.splitext(temp)[1]
     suffix = suffix.lower()
@@ -752,10 +847,11 @@ def isa_image(filename):
 
 #---------------------------------------------------------------
 
+
+    
 app = wx.App()
 Batcher(None, -1, 'Batcher')
 app.MainLoop()
-
 
 
 
