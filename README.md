@@ -1,9 +1,12 @@
 Batcher - Bulk renaming files using EXIF data.
 
-Req:Python 2.7, ffmpeg, imagemagick
-Modules: wxpython, PIL
+Req:Python 3, ffmpeg, imagemagick
+Extra modules: Pillow
 
-
+v1.12.0.0
+ -Converting wxpython to tkinter
+ -Python 2.7 -> Python 3
+ 
 v1.11.5.7
  -Code cleanup
  -It's now possible to handle one sublevel of directories for multiple photofolders when making timelapse videos.
