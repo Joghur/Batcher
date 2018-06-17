@@ -100,8 +100,8 @@ class Batcher(Frame):
         timelapse.add_command(label="Convert to greyscale", command=self.OnGreyscale)
         timelapse.add_command(label="Remove dark photos", command=self.OnRemoveDark)
         timelapse.add_command(label="Rename consecutive numbers", command=self.OnConsNUMBER)
-        timelapse.add_command(label="Timelapse", command=self.OnTimelapse())
-        timelapse.add_command(label="All in one", command=self.OnAllInOne())
+        timelapse.add_command(label="Timelapse", command=self.OnTimelapse)
+        timelapse.add_command(label="All in one", command=self.OnAllInOne)
         menu.add_cascade(label="Timelapse", menu=timelapse)
 
         # create the help object
@@ -302,7 +302,7 @@ class Batcher(Frame):
 
 #---------------------------------------------------------------
     
-    def OnTimer(self, event):
+    def OnTimer(self):
         self.blick = self.blick + 1
         if self.blick == 25:
             self.statusbar.SetBackgroundColour('#E0E2EB')
@@ -319,7 +319,7 @@ class Batcher(Frame):
 #---------------------------------------------------------------
       
     def Change(self):
-        messagebox.askokcancel('Not in yet\t', 'Note')
+        messagebox.showinfo('Note', 'Not in yet\t')
 
 
 #---------------------------------------------------------------
@@ -342,6 +342,7 @@ class Batcher(Frame):
         dirList.sort()
         dirlistlen = len(dirList)
         print('Number of items in work folder:', dirlistlen)
+        # ToDo. Rucursion
         if dirlistlen > 9:
             if dirlistlen > 99:
                 if dirlistlen > 999:
@@ -385,6 +386,7 @@ class Batcher(Frame):
                 taeller2 = 1
                 dirlistlen2 = len(dirList2)
                 print('Number of items in work folder:', dirlistlen2)
+                # ToDo: Recursion
                 if dirlistlen2 > 9:
                     if dirlistlen2 > 99:
                         if dirlistlen2 > 999:
@@ -523,8 +525,7 @@ class Batcher(Frame):
 #---------------------------------------------------------------
 
     def Insert(self):
-        dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
+        messagebox.showinfo('Note', 'Not in yet\t')
 
  #---------------------------------------------------------------           
 
@@ -718,14 +719,12 @@ class Batcher(Frame):
 #---------------------------------------------------------------
 
     def RenameDATE(self):
-        dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
+        messagebox.showinfo('Note', 'Not in yet\t')
 
 #---------------------------------------------------------------
 
     def RenameEXIF(self):
-        dlg = wx.MessageDialog(self, 'Not in yet\t', 'Note', wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()            
+        messagebox.showinfo('Note', 'Not in yet\t')
 
 #---------------------------------------------------------------
             
@@ -746,7 +745,7 @@ class Batcher(Frame):
                 print(d, " is an image!")
                 arg = " " + "-resize " + arbejds_filsize + " " + "-quality " + arbejds_quality + " "
                 # Command line for linux
-                command = "convert " + d + arg + d
+                command = "mogrify " + d + arg + d
                 print(command)
                 print("---")
                 child = subprocess.Popen(command, shell=True)
